@@ -15,7 +15,7 @@ namespace SignalRFlights
         [FunctionName("SignalRInfo")]
         public static IActionResult Run(
             [HttpTrigger(AuthorizationLevel.Anonymous)] HttpRequest req,
-            [SignalRConnectionInfo(HubName = "keydrilltest")] SignalRConnectionInfo connectionInfo,
+            [SignalRConnectionInfo(HubName = "testhub")] SignalRConnectionInfo connectionInfo,
             ILogger log)
         {
             return new OkObjectResult(connectionInfo);
