@@ -15,7 +15,7 @@ namespace ClientFunction
         [FunctionName("GetData")]
         public static IActionResult Run(
             [HttpTrigger(AuthorizationLevel.Anonymous)] HttpRequest req,
-            [CosmosDB("KeyDrillTestDatabase", "KeyDrillTestContainer", ConnectionStringSetting = "AzureWebJobsCosmosDBConnectionString")]
+            [CosmosDB("TestDatabase", "TestContainer", ConnectionStringSetting = "AzureWebJobsCosmosDBConnectionString")]
                 IEnumerable<object> runningData,
             ILogger log)
         {
