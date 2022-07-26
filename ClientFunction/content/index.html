@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>
+        Data Feed Test
+    </title>
+</head>
+
+
+<body>
+    <h1>Data Feed Test</h1>
+        
+    <div class="container" id="app">
+        <div class="row">
+            <div v-for="newData in runningData" class="col-md-6 col-lg-4 col-xl-3">
+                <h2>
+                    Make: {{newData.Make}}<br>
+                    Price: {{newData.Price}}<br>
+                    Time: {{newData.Time}}
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    <script src="https://unpkg.com/@aspnet/signalr@1.0.2/dist/browser/signalr.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        const apiBaseUrl = 'REMOTE_URL'
+        const axiosConfig = {}
+        const data = {
+            runningData: []
+        }
+        const app = new Vue({
+            el: '#app',
+            data: data
+        })
+        getData().then(function(runningData) {
+            runningData.forEach(dataUpdated)
+        }).then(getConnectionInfo).then(function (info) {
+            let accessToken = info.accessToken
+            const options = {
+                accessTokenFactory: function () {
+                    if (accessToken) {
+                        const _accessToken = accessToken
+                        accessToken = null
+                        return _accessToken
+                    } else {
+                        return getConnectionInfo().then(function (info) {
+                            return info.accessToken
+                        })
+                    }
+                }
+            }
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl(info.url, options)
+                .build()
+
+            connection.on('dataUpdated', dataUpdated)
+
+            connection.onclose(function () {
+                console.log('disconnected')
+                setTimeout(function () { startConnection(connection) }, 2000)
+            })
+            startConnection(connection)
+
+        }).catch(console.error)
+
+        function startConnection(connection) {
+            console.log('connecting...')
+            connection.start()
+                .then(function () { console.log('connected!') })
+                .catch(function (err) {
+                    console.error(err)
+                    setTimeout(function () { startConnection(connection) }, 2000)
+                })
+        }
+
+        function getData() {
+            return axios.post(`${apiBaseUrl}/api/GetData`, null, axiosConfig)
+                .then(function (resp) { return resp.data })
+                .catch(function () { return {} })
+        }
+
+        function getConnectionInfo() {
+            return axios.post(`${apiBaseUrl}/api/SignalRInfo`, null, axiosConfig)
+                .then(function (resp) { return resp.data })
+                .catch(function () { return {} })
+        }
+
+        function dataUpdated(updatedData) {
+            const newData = data.runningData.find(f => f.id === updatedData.id)
+            if (newData) {
+                Vue.set(newData, 'Make', updatedData.Make)
+                Vue.set(newData, 'Time', updatedData.Time)
+                Vue.set(newData, 'Price', updatedData.Price)
+            } else {
+                data.runningData.push(updatedData)
+            }
+        }
+    </script>
+</body>
+
+
+</html>
